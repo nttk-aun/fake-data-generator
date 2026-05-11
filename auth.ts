@@ -28,9 +28,33 @@ function readGoogleClientSecret(): string {
   }
 }
 
+/** Auth.js requires `secret` (≥32 chars). Set `AUTH_SECRET` in .env; dev fallback for non-production only. */
+function readAuthSecret(): string {
+  try {
+    const fromEnv = (
+      process.env.AUTH_SECRET ??
+      process.env.NEXTAUTH_SECRET ??
+      ""
+    ).trim();
+    if (fromEnv.length >= 32) {
+      return fromEnv;
+    }
+    if (process.env.NODE_ENV !== "production") {
+      return "0123456789abcdef0123456789abcdef";
+    }
+    throw new Error("AUTH_SECRET is required in production (min 32 characters).");
+  } catch (error) {
+    logError("readAuthSecret", error);
+    if (process.env.NODE_ENV !== "production") {
+      return "0123456789abcdef0123456789abcdef";
+    }
+    throw error;
+  }
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
-  secret: process.env.AUTH_SECRET,
+  secret: readAuthSecret(),
   providers: [
     Google({
       clientId: readGoogleClientId(),
