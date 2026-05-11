@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { auth } from "@/auth";
+import { BillingAlert } from "@/components/BillingAlert";
 import { FakeDataGenerator } from "@/components/FakeDataGenerator";
 import { FREE_BULK_MIN } from "@/lib/bulk-export";
 import { logError } from "@/lib/logger";
@@ -14,6 +16,9 @@ export default async function Home() {
 
     return (
       <div className="min-h-full flex flex-col bg-[var(--background)] text-[var(--foreground)]">
+        <Suspense fallback={null}>
+          <BillingAlert />
+        </Suspense>
         <FakeDataGenerator
           signedIn={signedIn}
           maxBulkRowsWhenSignedIn={maxBulkRowsWhenSignedIn}
