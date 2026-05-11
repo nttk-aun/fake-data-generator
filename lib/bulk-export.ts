@@ -23,24 +23,11 @@ export type BulkExportColumn = {
   readonly label: string;
 };
 
-/** Rows allowed on the free tier (no signup). Larger packs are reserved for membership. */
+/** Rows allowed for signed-in users before DB cap (floor). */
 export const FREE_BULK_MIN = 10;
+/** Default cap for free tier in UI copy / hints when not reading DB. */
 export const FREE_BULK_MAX = 100;
 
-export function normalizeFreeTierRowCount(input: unknown): number {
-  try {
-    const n = Math.floor(Number(input));
-    if (!Number.isFinite(n)) {
-      return FREE_BULK_MIN;
-    }
-    return Math.min(FREE_BULK_MAX, Math.max(FREE_BULK_MIN, n));
-  } catch (error) {
-    logError("normalizeFreeTierRowCount", error);
-    return FREE_BULK_MIN;
-  }
-}
-
-/** Guest (not signed in with Google): small bulk export only. */
 export const GUEST_BULK_MIN = 1;
 export const GUEST_BULK_MAX = 10;
 
@@ -59,25 +46,31 @@ export function normalizeGuestBulkRowCount(input: unknown): number {
 
 export function normalizeBulkRowCount(
   input: unknown,
-  signedIn: boolean,
+  opts: { isGuest: boolean; maxRowsWhenSignedIn: number },
 ): number {
   try {
-    return signedIn
-      ? normalizeFreeTierRowCount(input)
-      : normalizeGuestBulkRowCount(input);
+    if (opts.isGuest) {
+      return normalizeGuestBulkRowCount(input);
+    }
+    const cap = Math.max(FREE_BULK_MIN, Math.floor(opts.maxRowsWhenSignedIn));
+    const n = Math.floor(Number(input));
+    if (!Number.isFinite(n)) {
+      return Math.min(cap, FREE_BULK_MIN);
+    }
+    return Math.min(cap, Math.max(FREE_BULK_MIN, n));
   } catch (error) {
     logError("normalizeBulkRowCount", error);
-    return signedIn ? FREE_BULK_MIN : GUEST_BULK_MIN;
+    return opts.isGuest ? GUEST_BULK_MIN : FREE_BULK_MIN;
   }
 }
 
 export function generateProfilesBulk(
   country: CountryCode,
   count: number,
-  signedIn: boolean,
+  opts: { isGuest: boolean; maxRowsWhenSignedIn: number },
 ): GeneratedProfile[] {
   try {
-    const safe = normalizeBulkRowCount(count, signedIn);
+    const safe = normalizeBulkRowCount(count, opts);
     const list: GeneratedProfile[] = [];
     for (let i = 0; i < safe; i += 1) {
       list.push(generateProfile(country));

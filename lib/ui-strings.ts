@@ -272,11 +272,18 @@ export function formatHintMaxRows(hintTemplate: string, max: number): string {
   }
 }
 
-export function formatBulkRowHint(hintTemplate: string): string {
+export function formatBulkRowHint(
+  hintTemplate: string,
+  memberMaxCap: number = FREE_BULK_MAX,
+): string {
   try {
+    const cap =
+      typeof memberMaxCap === "number" && memberMaxCap > 0
+        ? memberMaxCap
+        : FREE_BULK_MAX;
     return hintTemplate
       .replace(/\{\{\s*guest\s*\}\}/g, `${GUEST_BULK_MAX}`)
-      .replace(/\{\{\s*member\s*\}\}/g, `${FREE_BULK_MAX}`);
+      .replace(/\{\{\s*member\s*\}\}/g, `${cap}`);
   } catch (error) {
     logError("formatBulkRowHint", error);
     return hintTemplate;

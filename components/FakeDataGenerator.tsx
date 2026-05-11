@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   FREE_BULK_MAX,
   FREE_BULK_MIN,
@@ -63,21 +63,39 @@ function FieldRow(props: {
   );
 }
 
-export function FakeDataGenerator({ signedIn }: { signedIn: boolean }) {
+export function FakeDataGenerator({
+  signedIn,
+  maxBulkRowsWhenSignedIn = 100,
+}: {
+  signedIn: boolean;
+  maxBulkRowsWhenSignedIn?: number;
+}) {
+  const signedCap = Math.max(
+    FREE_BULK_MIN,
+    Math.floor(maxBulkRowsWhenSignedIn),
+  );
+  const bulkOpts = useMemo(
+    () => ({
+      isGuest: !signedIn,
+      maxRowsWhenSignedIn: signedIn ? signedCap : GUEST_BULK_MAX,
+    }),
+    [signedIn, signedCap],
+  );
+
   const [country, setCountry] = useState<CountryCode>("TH");
   const [profile, setProfile] = useState<GeneratedProfile | null>(null);
   const [bulkRows, setBulkRows] = useState<number>(() =>
-    signedIn ? 50 : GUEST_BULK_MAX,
+    signedIn ? Math.min(50, signedCap) : GUEST_BULK_MAX,
   );
   const [bulkExporting, setBulkExporting] = useState<boolean>(false);
 
   useEffect(() => {
     try {
-      setBulkRows((prev) => normalizeBulkRowCount(prev, signedIn));
+      setBulkRows((prev) => normalizeBulkRowCount(prev, bulkOpts));
     } catch (error) {
       logError("FakeDataGenerator_effect_bulkClamp", error);
     }
-  }, [signedIn]);
+  }, [bulkOpts]);
 
   useEffect(() => {
     try {
@@ -107,12 +125,12 @@ export function FakeDataGenerator({ signedIn }: { signedIn: boolean }) {
   const onBulkRowsInput = useCallback(
     (raw: string) => {
       try {
-        setBulkRows(normalizeBulkRowCount(raw, signedIn));
+        setBulkRows(normalizeBulkRowCount(raw, bulkOpts));
       } catch (error) {
         logError("FakeDataGenerator_onBulkRowsInput", error);
       }
     },
-    [signedIn],
+    [bulkOpts],
   );
 
   const runBulkExport = useCallback(
@@ -122,8 +140,8 @@ export function FakeDataGenerator({ signedIn }: { signedIn: boolean }) {
         globalThis.window.setTimeout(() => {
           try {
             const t = getUiCopy(country);
-            const safeCount = normalizeBulkRowCount(bulkRows, signedIn);
-            const rows = generateProfilesBulk(country, safeCount, signedIn);
+            const safeCount = normalizeBulkRowCount(bulkRows, bulkOpts);
+            const rows = generateProfilesBulk(country, safeCount, bulkOpts);
             const columns = toBulkExportColumns(t);
             if (mode === "csv") {
               const csv = profilesToCsv(rows, columns);
@@ -148,7 +166,7 @@ export function FakeDataGenerator({ signedIn }: { signedIn: boolean }) {
         setBulkExporting(false);
       }
     },
-    [bulkRows, country, signedIn],
+    [bulkRows, bulkOpts, country],
   );
 
   try {
@@ -186,7 +204,10 @@ export function FakeDataGenerator({ signedIn }: { signedIn: boolean }) {
             {t.bulkSectionTitle}
           </h2>
           <p className="text-xs text-zinc-600 dark:text-zinc-400">
-            {formatBulkRowHint(t.bulkRowCountHint)}
+            {formatBulkRowHint(
+              t.bulkRowCountHint,
+              signedIn ? signedCap : FREE_BULK_MAX,
+            )}
           </p>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-4">
             <label className="flex flex-1 flex-col gap-1 text-sm">
@@ -196,7 +217,7 @@ export function FakeDataGenerator({ signedIn }: { signedIn: boolean }) {
               <input
                 type="number"
                 min={signedIn ? FREE_BULK_MIN : GUEST_BULK_MIN}
-                max={signedIn ? FREE_BULK_MAX : GUEST_BULK_MAX}
+                max={signedIn ? signedCap : GUEST_BULK_MAX}
                 step={1}
                 value={bulkRows}
                 onChange={(e) => onBulkRowsInput(e.target.value)}

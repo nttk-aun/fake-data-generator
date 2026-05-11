@@ -1,13 +1,31 @@
 import { auth } from "@/auth";
 import { FakeDataGenerator } from "@/components/FakeDataGenerator";
+import { FREE_BULK_MIN } from "@/lib/bulk-export";
+import { logError } from "@/lib/logger";
 
 export default async function Home() {
-  const session = await auth();
-  const signedIn = Boolean(session?.user);
+  try {
+    const session = await auth();
+    const signedIn = Boolean(session?.user);
+    const maxBulkRowsWhenSignedIn = Math.max(
+      FREE_BULK_MIN,
+      session?.billing?.maxBulkRows ?? (signedIn ? 100 : 10),
+    );
 
-  return (
-    <div className="min-h-full flex flex-col bg-[var(--background)] text-[var(--foreground)]">
-      <FakeDataGenerator signedIn={signedIn} />
-    </div>
-  );
+    return (
+      <div className="min-h-full flex flex-col bg-[var(--background)] text-[var(--foreground)]">
+        <FakeDataGenerator
+          signedIn={signedIn}
+          maxBulkRowsWhenSignedIn={maxBulkRowsWhenSignedIn}
+        />
+      </div>
+    );
+  } catch (error) {
+    logError("Home", error);
+    return (
+      <div className="p-10 text-center text-sm text-red-600">
+        โหลดหน้าไม่สำเร็จ ลองรีเฟรช
+      </div>
+    );
+  }
 }
