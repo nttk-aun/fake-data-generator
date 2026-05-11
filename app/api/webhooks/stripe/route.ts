@@ -27,11 +27,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false }, { status: 400 });
     }
 
-    const claimed = await tryClaimStripeEvent(
-      event.id,
-      event.type,
-      event.livemode,
-    );
+    const claimed = await tryClaimStripeEvent(event.id, event.type);
     if (!claimed) {
       return NextResponse.json({ received: true, duplicate: true });
     }

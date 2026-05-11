@@ -6,25 +6,25 @@ import {
 } from "@/lib/billing/users";
 import { getStripe } from "@/lib/billing/stripe-client";
 import { logError } from "@/lib/logger";
+import { getSql } from "@/lib/neon";
 
 const PAID_PLAN_SLUG = "pro";
 
 export async function tryClaimStripeEvent(
   eventId: string,
   eventType: string,
-  livemode: boolean,
 ): Promise<boolean> {
   const sql = getSql();
   if (!sql) {
     return false;
   }
   try {
-    const rows = await sql<{ id: string }[]>`
-      INSERT INTO stripe_webhook_events (stripe_event_id, event_type, livemode, payload)
-      VALUES (${eventId}, ${eventType}, ${livemode}, NULL)
+    const rows = (await sql`
+      INSERT INTO stripe_webhook_events (stripe_event_id, event_type)
+      VALUES (${eventId}, ${eventType})
       ON CONFLICT (stripe_event_id) DO NOTHING
       RETURNING id::text
-    `;
+    `) as { id: string }[];
     return rows.length > 0;
   } catch (error) {
     logError("tryClaimStripeEvent", error);

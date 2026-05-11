@@ -53,7 +53,7 @@ export async function getUserBillingByEmail(
     return null;
   }
   try {
-    const rows = await sql<UserBillingRow[]>`
+    const rows = (await sql`
       SELECT
         id::text,
         email,
@@ -66,7 +66,7 @@ export async function getUserBillingByEmail(
       FROM users
       WHERE lower(email) = lower(${email})
       LIMIT 1
-    `;
+    `) as UserBillingRow[];
     return rows[0] ?? null;
   } catch (error) {
     logError("getUserBillingByEmail", error);
@@ -101,9 +101,9 @@ export async function getPlanStripePriceMonthly(
     return null;
   }
   try {
-    const rows = await sql<{ stripe_price_id_monthly: string | null }[]>`
+    const rows = (await sql`
       SELECT stripe_price_id_monthly FROM plans WHERE slug = ${planSlug} LIMIT 1
-    `;
+    `) as { stripe_price_id_monthly: string | null }[];
     return rows[0]?.stripe_price_id_monthly ?? null;
   } catch (error) {
     logError("getPlanStripePriceMonthly", error);
@@ -117,9 +117,9 @@ export async function getPlanMaxBulkRows(planSlug: string): Promise<number> {
     return 100;
   }
   try {
-    const rows = await sql<{ max_bulk_rows: number }[]>`
+    const rows = (await sql`
       SELECT max_bulk_rows FROM plans WHERE slug = ${planSlug} LIMIT 1
-    `;
+    `) as { max_bulk_rows: number }[];
     const n = rows[0]?.max_bulk_rows;
     return typeof n === "number" && n > 0 ? n : 100;
   } catch (error) {
@@ -209,9 +209,9 @@ export async function findUserIdByStripeCustomerId(
     return null;
   }
   try {
-    const rows = await sql<{ id: string }[]>`
+    const rows = (await sql`
       SELECT id::text FROM users WHERE stripe_customer_id = ${customerId} LIMIT 1
-    `;
+    `) as { id: string }[];
     return rows[0]?.id ?? null;
   } catch (error) {
     logError("findUserIdByStripeCustomerId", error);
