@@ -36,9 +36,12 @@ export async function GET() {
       return NextResponse.redirect(new URL("/?billing=stripe-missing", baseUrl()));
     }
 
+    const fromEnv = process.env.STRIPE_PRICE_ID_MONTHLY?.trim() ?? "";
+    const fromDb = (await getPlanStripePriceMonthly("pro"))?.trim() ?? "";
+    const rawPriceId = fromEnv || fromDb;
+    // Stripe Checkout ต้องการ Price ID (price_...) ไม่ใช่ Product ID (prod_...)
     const priceId =
-      process.env.STRIPE_PRICE_ID_MONTHLY?.trim() ||
-      (await getPlanStripePriceMonthly("pro"));
+      rawPriceId && !rawPriceId.startsWith("prod_") ? rawPriceId : "";
     if (!priceId) {
       return NextResponse.redirect(new URL("/?billing=no-price", baseUrl()));
     }

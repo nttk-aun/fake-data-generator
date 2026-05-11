@@ -14,7 +14,7 @@ function billingMessage(code: string | null): string | null {
       "stripe-missing":
         "ยังไม่ได้ตั้ง STRIPE_SECRET_KEY ใน environment — ใส่คีย์ sk_test_... แล้ว restart เซิร์ฟเวอร์",
       "no-price":
-        "ไม่พบ Stripe Price — ตั้ง STRIPE_PRICE_ID_MONTHLY=price_... หรือใส่ราคาใน Neon ตาราง plans (pro)",
+        "ไม่พบ Stripe Price — (1) ใน .env.local ต้องมีบรรทัด STRIPE_PRICE_ID_MONTHLY=price_... ไม่ใช่คอมเมนต์ และต้องเป็น price_ ไม่ใช่ prod_ (2) หรือใน Neon: UPDATE plans SET stripe_price_id_monthly = 'price_...' WHERE slug = 'pro'; แล้ว restart npm run dev",
       "no-user":
         "ไม่พบบัญชีในระบบ — ลองออกจากระบบแล้วล็อกอินใหม่ หรือตรวจว่า DATABASE_URL ต่อ Neon ได้",
       "no-url": "Stripe ไม่คืนลิงก์ Checkout — ตรวจ Price / บัญชี Stripe ในโหมด test",
