@@ -33,12 +33,12 @@ export default async function AppHeader() {
                     Pro
                   </span>
                 ) : (
-                  <Link
+                  <a
                     href="/api/billing/checkout"
                     className="rounded-md bg-amber-500 px-2 py-1 text-xs font-medium text-white hover:bg-amber-400"
                   >
                     สมัคร $1/เดือน
-                  </Link>
+                  </a>
                 )}
                 <form action={signOutAction}>
                   <button
