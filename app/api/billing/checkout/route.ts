@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import {
+  ensureUserRowByEmail,
   getPlanStripePriceMonthly,
   getUserBillingByEmail,
   setStripeCustomerId,
@@ -46,7 +47,11 @@ export async function GET() {
       return NextResponse.redirect(new URL("/?billing=no-price", baseUrl()));
     }
 
-    const userRow = await getUserBillingByEmail(email);
+    let userRow = await getUserBillingByEmail(email);
+    if (!userRow) {
+      await ensureUserRowByEmail(email);
+      userRow = await getUserBillingByEmail(email);
+    }
     if (!userRow) {
       return NextResponse.redirect(new URL("/?billing=no-user", baseUrl()));
     }

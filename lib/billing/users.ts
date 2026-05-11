@@ -45,6 +45,25 @@ export async function upsertUserFromGoogle(opts: {
   }
 }
 
+/** ถ้ามี session จาก Google แต่ยังไม่มีแถวใน DB (เช่น upsert ตอน login พลาด) — สร้างแถวขั้นต่ำ */
+export async function ensureUserRowByEmail(email: string): Promise<boolean> {
+  const sql = getSql();
+  if (!sql) {
+    return false;
+  }
+  try {
+    await sql`
+      INSERT INTO users (email, email_verified)
+      VALUES (${email}, true)
+      ON CONFLICT (email) DO NOTHING
+    `;
+    return true;
+  } catch (error) {
+    logError("ensureUserRowByEmail", error);
+    return false;
+  }
+}
+
 export async function getUserBillingByEmail(
   email: string,
 ): Promise<UserBillingRow | null> {
