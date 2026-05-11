@@ -40,25 +40,44 @@ export function normalizeFreeTierRowCount(input: unknown): number {
   }
 }
 
-export function isMembershipBulkCount(input: unknown): boolean {
+/** Guest (not signed in with Google): small bulk export only. */
+export const GUEST_BULK_MIN = 1;
+export const GUEST_BULK_MAX = 10;
+
+export function normalizeGuestBulkRowCount(input: unknown): number {
   try {
     const n = Math.floor(Number(input));
     if (!Number.isFinite(n)) {
-      return false;
+      return GUEST_BULK_MIN;
     }
-    return n > FREE_BULK_MAX;
+    return Math.min(GUEST_BULK_MAX, Math.max(GUEST_BULK_MIN, n));
   } catch (error) {
-    logError("isMembershipBulkCount", error);
-    return false;
+    logError("normalizeGuestBulkRowCount", error);
+    return GUEST_BULK_MIN;
+  }
+}
+
+export function normalizeBulkRowCount(
+  input: unknown,
+  signedIn: boolean,
+): number {
+  try {
+    return signedIn
+      ? normalizeFreeTierRowCount(input)
+      : normalizeGuestBulkRowCount(input);
+  } catch (error) {
+    logError("normalizeBulkRowCount", error);
+    return signedIn ? FREE_BULK_MIN : GUEST_BULK_MIN;
   }
 }
 
 export function generateProfilesBulk(
   country: CountryCode,
   count: number,
+  signedIn: boolean,
 ): GeneratedProfile[] {
   try {
-    const safe = normalizeFreeTierRowCount(count);
+    const safe = normalizeBulkRowCount(count, signedIn);
     const list: GeneratedProfile[] = [];
     for (let i = 0; i < safe; i += 1) {
       list.push(generateProfile(country));

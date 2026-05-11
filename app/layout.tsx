@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import AppHeader from "@/components/AppHeader";
-import { getServerSession } from "@/lib/auth/server-session";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,13 +19,11 @@ export const metadata: Metadata = {
     "Generate realistic mock personal data by country — no external APIs.",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getServerSession();
-
   return (
     <html
       lang="th"

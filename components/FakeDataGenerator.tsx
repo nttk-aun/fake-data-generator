@@ -4,9 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 import {
   FREE_BULK_MAX,
   FREE_BULK_MIN,
+  GUEST_BULK_MAX,
+  GUEST_BULK_MIN,
   downloadUtf8Csv,
   generateProfilesBulk,
-  normalizeFreeTierRowCount,
+  normalizeBulkRowCount,
   openProfilesPrintableTable,
   profilesToCsv,
 } from "@/lib/bulk-export";
@@ -18,7 +20,7 @@ import {
 import { logError } from "@/lib/logger";
 import {
   countryLabel,
-  formatHintMaxRows,
+  formatBulkRowHint,
   getUiCopy,
   toBulkExportColumns,
 } from "@/lib/ui-strings";
@@ -61,11 +63,21 @@ function FieldRow(props: {
   );
 }
 
-export function FakeDataGenerator() {
+export function FakeDataGenerator({ signedIn }: { signedIn: boolean }) {
   const [country, setCountry] = useState<CountryCode>("TH");
   const [profile, setProfile] = useState<GeneratedProfile | null>(null);
-  const [bulkRows, setBulkRows] = useState<number>(50);
+  const [bulkRows, setBulkRows] = useState<number>(() =>
+    signedIn ? 50 : GUEST_BULK_MAX,
+  );
   const [bulkExporting, setBulkExporting] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      setBulkRows((prev) => normalizeBulkRowCount(prev, signedIn));
+    } catch (error) {
+      logError("FakeDataGenerator_effect_bulkClamp", error);
+    }
+  }, [signedIn]);
 
   useEffect(() => {
     try {
@@ -92,13 +104,16 @@ export function FakeDataGenerator() {
     }
   }, []);
 
-  const onBulkRowsInput = useCallback((raw: string) => {
-    try {
-      setBulkRows(normalizeFreeTierRowCount(raw));
-    } catch (error) {
-      logError("FakeDataGenerator_onBulkRowsInput", error);
-    }
-  }, []);
+  const onBulkRowsInput = useCallback(
+    (raw: string) => {
+      try {
+        setBulkRows(normalizeBulkRowCount(raw, signedIn));
+      } catch (error) {
+        logError("FakeDataGenerator_onBulkRowsInput", error);
+      }
+    },
+    [signedIn],
+  );
 
   const runBulkExport = useCallback(
     (mode: "csv" | "print") => {
@@ -107,8 +122,8 @@ export function FakeDataGenerator() {
         globalThis.window.setTimeout(() => {
           try {
             const t = getUiCopy(country);
-            const safeCount = normalizeFreeTierRowCount(bulkRows);
-            const rows = generateProfilesBulk(country, safeCount);
+            const safeCount = normalizeBulkRowCount(bulkRows, signedIn);
+            const rows = generateProfilesBulk(country, safeCount, signedIn);
             const columns = toBulkExportColumns(t);
             if (mode === "csv") {
               const csv = profilesToCsv(rows, columns);
@@ -133,7 +148,7 @@ export function FakeDataGenerator() {
         setBulkExporting(false);
       }
     },
-    [bulkRows, country],
+    [bulkRows, country, signedIn],
   );
 
   try {
@@ -171,7 +186,7 @@ export function FakeDataGenerator() {
             {t.bulkSectionTitle}
           </h2>
           <p className="text-xs text-zinc-600 dark:text-zinc-400">
-            {formatHintMaxRows(t.bulkRowCountHint, FREE_BULK_MAX)}
+            {formatBulkRowHint(t.bulkRowCountHint)}
           </p>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-4">
             <label className="flex flex-1 flex-col gap-1 text-sm">
@@ -180,8 +195,8 @@ export function FakeDataGenerator() {
               </span>
               <input
                 type="number"
-                min={FREE_BULK_MIN}
-                max={FREE_BULK_MAX}
+                min={signedIn ? FREE_BULK_MIN : GUEST_BULK_MIN}
+                max={signedIn ? FREE_BULK_MAX : GUEST_BULK_MAX}
                 step={1}
                 value={bulkRows}
                 onChange={(e) => onBulkRowsInput(e.target.value)}

@@ -1,4 +1,5 @@
 import type { BulkExportColumn } from "@/lib/bulk-export";
+import { FREE_BULK_MAX, GUEST_BULK_MAX } from "@/lib/bulk-export";
 import type { CountryCode } from "@/lib/generators/types";
 import { logError } from "@/lib/logger";
 
@@ -82,9 +83,10 @@ const TH: UiCopy = {
   fieldPanMasked: "เลขการ์ดปิดบัง",
   fieldUuid: "UUID",
   fieldApiKey: "API key (จำลอง)",
-  bulkSectionTitle: "ส่งออกหลายแถว (ฟรี 10–100)",
+  bulkSectionTitle: "ส่งออกหลายแถว (CSV / พิมพ์)",
   bulkRowCountLabel: "จำนวนแถวที่ส่งออก",
-  bulkRowCountHint: "เหมาะกับแทรกเข้าฐานข้อมูลหรือ Excel — ฟรีสูงสุด {{max}} แถว",
+  bulkRowCountHint:
+    "ยังไม่ล็อกอิน: ส่งออกได้สูงสุด {{guest}} แถว — ล็อกอินด้วย Google (มุมขวา) ได้สูงสุด {{member}} แถว",
   bulkUpgradeNote:
     "ถ้าต้องการ 1,000+ แถว ให้สมัครสมาชิกหรือติดต่อทีม (กำลังพัฒนา)",
   exportCsv: "ดาวน์โหลด CSV",
@@ -126,9 +128,10 @@ const EN: UiCopy = {
   fieldPanMasked: "Masked PAN",
   fieldUuid: "UUID",
   fieldApiKey: "API key (mock)",
-  bulkSectionTitle: "Bulk export (free 10–100 rows)",
+  bulkSectionTitle: "Bulk export (CSV / print)",
   bulkRowCountLabel: "Number of rows",
-  bulkRowCountHint: "For DB or Excel import — free tier up to {{max}} rows",
+  bulkRowCountHint:
+    "Not signed in: up to {{guest}} rows — Sign in with Google (top right) for up to {{member}} rows",
   bulkUpgradeNote:
     "Need 1,000+ rows? Membership / team plan (coming soon).",
   exportCsv: "Download CSV",
@@ -170,9 +173,10 @@ const JA: UiCopy = {
   fieldPanMasked: "マスク済みカード番号",
   fieldUuid: "UUID",
   fieldApiKey: "APIキー（モック）",
-  bulkSectionTitle: "一括出力（無料・10〜100行）",
+  bulkSectionTitle: "一括出力（CSV / 印刷）",
   bulkRowCountLabel: "出力行数",
-  bulkRowCountHint: "DB/Excelに取り込み — 無料は最大 {{max}} 行まで",
+  bulkRowCountHint:
+    "未ログイン: 最大 {{guest}} 行 — 右上の Google でログインすると最大 {{member}} 行",
   bulkUpgradeNote:
     "1,000行以上が必要なら会員／チームプラン（準備中）へお問い合わせください",
   exportCsv: "CSVをダウンロード",
@@ -264,6 +268,17 @@ export function formatHintMaxRows(hintTemplate: string, max: number): string {
     return hintTemplate.replace(/\{\{\s*max\s*\}\}/g, `${max}`);
   } catch (error) {
     logError("formatHintMaxRows", error);
+    return hintTemplate;
+  }
+}
+
+export function formatBulkRowHint(hintTemplate: string): string {
+  try {
+    return hintTemplate
+      .replace(/\{\{\s*guest\s*\}\}/g, `${GUEST_BULK_MAX}`)
+      .replace(/\{\{\s*member\s*\}\}/g, `${FREE_BULK_MAX}`);
+  } catch (error) {
+    logError("formatBulkRowHint", error);
     return hintTemplate;
   }
 }
