@@ -31,15 +31,8 @@ export function buildRealisticEmailLocal(firstName: string, lastName: string): s
 
 export function pickEmailDomain(): string {
   try {
-    const domains = [
-      "example.com",
-      "example.net",
-      "mail.example",
-      "inbox.dev",
-      "mailbox.test",
-      "noreply.dev",
-      "staging-mail.test",
-    ] as const;
+    /** RFC 2606 / 6761 reserved — safe for synthetic data only. */
+    const domains = ["example.com", "example.net"] as const;
     const idx = Math.floor(Math.random() * domains.length);
     return domains[idx] ?? domains[0];
   } catch (error) {

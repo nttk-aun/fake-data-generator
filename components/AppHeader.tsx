@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { signInWithGoogleAction, signOutAction } from "@/app/actions/google-auth";
 import { logError } from "@/lib/logger";
+import { isNextDynamicServerError } from "@/lib/next-dynamic";
 
 export default async function AppHeader() {
   try {
@@ -64,6 +65,9 @@ export default async function AppHeader() {
       </header>
     );
   } catch (error) {
+    if (isNextDynamicServerError(error)) {
+      throw error;
+    }
     logError("AppHeader", error);
     return (
       <header className="border-b border-zinc-200 px-4 py-3">

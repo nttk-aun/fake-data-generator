@@ -19,6 +19,9 @@ export const metadata: Metadata = {
     "Generate realistic mock personal data by country — no external APIs.",
 };
 
+/** Session in AppHeader uses auth() → headers(); avoid static prerender at build. */
+export const dynamic = "force-dynamic";
+
 export default function RootLayout({
   children,
 }: Readonly<{

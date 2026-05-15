@@ -16,7 +16,13 @@ export const EXPORT_FIELD_ORDER = [
   "creditCardMasked",
   "uuid",
   "apiKeyMock",
+  "isSynthetic",
+  "generatedAt",
 ] as const satisfies readonly (keyof GeneratedProfile)[];
+
+/** Prepended to CSV exports (single metadata row). */
+export const CSV_SYNTHETIC_DISCLAIMER_ROW =
+  "# SYNTHETIC_MOCK_DATA — not real persons; do not SMS/call/KYC; for dev/test only";
 
 export type BulkExportColumn = {
   readonly key: (typeof EXPORT_FIELD_ORDER)[number];
@@ -115,11 +121,12 @@ export function profilesToCsv(
 ): string {
   try {
     const BOM = "\uFEFF";
+    const disclaimerLine = `${encodeCsvCell(CSV_SYNTHETIC_DISCLAIMER_ROW)}\r\n`;
     const headerLine = `${columns.map((c) => encodeCsvCell(c.label)).join(",")}\r\n`;
     const bodyLines = profiles.map((profile) =>
-      `${columns.map((c) => encodeCsvCell(profile[c.key])).join(",")}\r\n`,
+      `${columns.map((c) => encodeCsvCell(String(profile[c.key]))).join(",")}\r\n`,
     );
-    return BOM + headerLine + bodyLines.join("");
+    return BOM + disclaimerLine + headerLine + bodyLines.join("");
   } catch (error) {
     logError("profilesToCsv", error);
     return "\uFEFF";
@@ -150,38 +157,31 @@ export function downloadUtf8Csv(filenameBase: string, csvText: string): void {
   }
 }
 
-/** Opens a printable table in a new tab (browser “Save as PDF” via print dialog). */
-export function openProfilesPrintableTable(opts: {
+function buildProfilesPrintableHtml(opts: {
   profiles: GeneratedProfile[];
   documentTitle: string;
   columns: readonly BulkExportColumn[];
-  printControlLabel: string;
-}): void {
-  try {
-    const w = globalThis.window.open("", "_blank", "noopener,noreferrer");
-    if (!w) {
-      throw new Error("open_profiles_print_blocked");
-    }
-    const { profiles, columns, documentTitle, printControlLabel } = opts;
+}): string {
+  const { profiles, columns, documentTitle } = opts;
+  const thead = `<tr>${columns.map((col) => `<th>${escapeHtmlCell(col.label)}</th>`).join("")}</tr>`;
+  const tbody = profiles
+    .map((p) => {
+      const cells = columns
+        .map((col) => {
+          let cell = `${p[col.key]}`;
+          if (col.key === "address") {
+            cell = cell.replace(/\r?\n/g, " / ");
+          }
+          return `<td>${escapeHtmlCell(cell)}</td>`;
+        })
+        .join("");
+      return `<tr>${cells}</tr>`;
+    })
+    .join("");
+  const printDisclaimer =
+    "SYNTHETIC MOCK DATA — not real persons. Do not SMS, call, or use for KYC/production identity.";
 
-    const thead = `<tr>${columns.map((col) => `<th>${escapeHtmlCell(col.label)}</th>`).join("")}</tr>`;
-
-    const tbody = profiles
-      .map((p) => {
-        const cells = columns
-          .map((col) => {
-            let cell = `${p[col.key]}`;
-            if (col.key === "address") {
-              cell = cell.replace(/\r?\n/g, " / ");
-            }
-            return `<td>${escapeHtmlCell(cell)}</td>`;
-          })
-          .join("");
-        return `<tr>${cells}</tr>`;
-      })
-      .join("");
-
-    const html = `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -190,22 +190,85 @@ export function openProfilesPrintableTable(opts: {
   @page { size: A4 landscape; margin: 12mm; }
   body { font-family: system-ui, "Segoe UI", "Noto Sans Thai", "Hiragino Sans", sans-serif; font-size: 8px; color: #111; }
   h1 { font-size: 12px; margin: 0 0 8px; font-weight: 600; }
+  .disclaimer { font-size: 7px; color: #92400e; background: #fffbeb; border: 1px solid #fcd34d; padding: 6px 8px; margin: 0 0 8px; border-radius: 4px; }
   table { width: 100%; border-collapse: collapse; }
   th, td { border: 1px solid #ccc; padding: 4px 6px; vertical-align: top; word-break: break-word; }
   th { background: #f3f4f6; font-weight: 600; font-size: 7px; }
-  @media print { body { margin: 0; } button { display: none; } }
+  @media print { body { margin: 0; } }
 </style>
 </head>
 <body>
-<button type="button" onclick="window.print()">${escapeHtmlCell(printControlLabel)}</button>
 <h1>${escapeHtmlCell(documentTitle)}</h1>
+<p class="disclaimer">${escapeHtmlCell(printDisclaimer)}</p>
 <table>${thead}${tbody}</table>
 </body></html>`;
-    w.document.open();
-    w.document.write(html);
-    w.document.close();
-    w.focus();
+}
+
+function downloadPrintableHtml(filenameBase: string, html: string): void {
+  const safeName = /\.html?$/i.test(filenameBase) ? filenameBase : `${filenameBase}.html`;
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  try {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = safeName;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/** Opens the browser print dialog (Save as PDF) without a popup — avoids blocker after async work. */
+export function printProfilesTable(opts: {
+  profiles: GeneratedProfile[];
+  documentTitle: string;
+  columns: readonly BulkExportColumn[];
+  downloadFilenameBase?: string;
+}): void {
+  try {
+    const html = buildProfilesPrintableHtml(opts);
+    const iframe = document.createElement("iframe");
+    iframe.setAttribute("aria-hidden", "true");
+    iframe.style.cssText =
+      "position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;pointer-events:none";
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentDocument;
+    const win = iframe.contentWindow;
+    if (!doc || !win) {
+      iframe.remove();
+      throw new Error("print_iframe_unavailable");
+    }
+
+    doc.open();
+    doc.write(html);
+    doc.close();
+
+    const cleanup = () => {
+      try {
+        iframe.remove();
+      } catch {
+        /* ignore */
+      }
+    };
+    win.addEventListener("afterprint", cleanup, { once: true });
+    globalThis.window.setTimeout(cleanup, 120_000);
+
+    win.focus();
+    win.print();
   } catch (error) {
-    logError("openProfilesPrintableTable", error);
+    logError("printProfilesTable", error);
+    try {
+      const html = buildProfilesPrintableHtml(opts);
+      const base =
+        opts.downloadFilenameBase ??
+        `fake-data-print_${new Date().toISOString().slice(0, 10)}`;
+      downloadPrintableHtml(base, html);
+    } catch (fallbackErr) {
+      logError("printProfilesTable_fallback_download", fallbackErr);
+    }
   }
 }

@@ -9,7 +9,7 @@ import {
   downloadUtf8Csv,
   generateProfilesBulk,
   normalizeBulkRowCount,
-  openProfilesPrintableTable,
+  printProfilesTable,
   profilesToCsv,
 } from "@/lib/bulk-export";
 import {
@@ -137,32 +137,25 @@ export function FakeDataGenerator({
     (mode: "csv" | "print") => {
       try {
         setBulkExporting(true);
-        globalThis.window.setTimeout(() => {
-          try {
-            const t = getUiCopy(country);
-            const safeCount = normalizeBulkRowCount(bulkRows, bulkOpts);
-            const rows = generateProfilesBulk(country, safeCount, bulkOpts);
-            const columns = toBulkExportColumns(t);
-            if (mode === "csv") {
-              const csv = profilesToCsv(rows, columns);
-              const stamp = new Date().toISOString().slice(0, 10);
-              downloadUtf8Csv(`fake-data_${country}_${safeCount}_${stamp}`, csv);
-            } else {
-              openProfilesPrintableTable({
-                profiles: rows,
-                documentTitle: `${t.bulkPrintDocTitle} (${safeCount})`,
-                columns,
-                printControlLabel: t.exportPrintPdf,
-              });
-            }
-          } catch (error) {
-            logError("FakeDataGenerator_runBulkExport_inner", error);
-          } finally {
-            setBulkExporting(false);
-          }
-        }, 0);
+        const t = getUiCopy(country);
+        const safeCount = normalizeBulkRowCount(bulkRows, bulkOpts);
+        const rows = generateProfilesBulk(country, safeCount, bulkOpts);
+        const columns = toBulkExportColumns(t);
+        const stamp = new Date().toISOString().slice(0, 10);
+        if (mode === "csv") {
+          const csv = profilesToCsv(rows, columns);
+          downloadUtf8Csv(`fake-data_${country}_${safeCount}_${stamp}`, csv);
+        } else {
+          printProfilesTable({
+            profiles: rows,
+            documentTitle: `${t.bulkPrintDocTitle} (${safeCount})`,
+            columns,
+            downloadFilenameBase: `fake-data_${country}_${safeCount}_${stamp}`,
+          });
+        }
       } catch (error) {
         logError("FakeDataGenerator_runBulkExport", error);
+      } finally {
         setBulkExporting(false);
       }
     },
@@ -177,6 +170,12 @@ export function FakeDataGenerator({
         <header className="space-y-2">
           <h1 className="text-2xl font-semibold tracking-tight">{t.title}</h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">{t.subtitle}</p>
+          <p
+            role="note"
+            className="rounded-lg border border-amber-300/80 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-950 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-100"
+          >
+            {t.syntheticDisclaimer}
+          </p>
         </header>
 
         <div className="flex flex-wrap gap-2">

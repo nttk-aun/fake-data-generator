@@ -60,12 +60,17 @@ export type UiCopy = {
   colCreditCardMasked: string;
   colUuid: string;
   colApiKey: string;
+  colIsSynthetic: string;
+  colGeneratedAt: string;
+  syntheticDisclaimer: string;
 };
 
 const TH: UiCopy = {
   title: "เครื่องสร้างข้อมูลจำลอง",
   subtitle:
-    "สร้างข้อมูลปลอมตามประเทศที่เลือก ไม่เรียก API ภายนอก — บัตรและ API key ใช้เทสเท่านั้น",
+    "ข้อมูลจำลองเท่านั้น — ชื่อ/เบอร์/ที่อยู่ใช้ช่วงสมมุติ อีเมล @example.com/.net ห้ามใช้กับบุคคลจริง",
+  syntheticDisclaimer:
+    "ข้อมูลทุกแถวเป็น SYNTHETIC (is_synthetic=true) สำหรับ dev/QA เท่านั้น ห้ามส่ง SMS โทร KYC หรือโหลดเข้าระบบ production โดยไม่ตรวจสอบ",
   countryTh: "ไทย (TH)",
   countryUs: "สหรัฐอเมริกา (US)",
   countryJp: "ญี่ปุ่น (JP)",
@@ -105,12 +110,16 @@ const TH: UiCopy = {
   colCreditCardMasked: "pan_masked",
   colUuid: "uuid",
   colApiKey: "api_key_mock",
+  colIsSynthetic: "is_synthetic",
+  colGeneratedAt: "generated_at",
 };
 
 const EN: UiCopy = {
   title: "Fake Data Generator",
   subtitle:
-    "Country-aware mock identities — runs locally only. Fake cards/API keys are for testing.",
+    "Synthetic identities only — fictional names, reserved phone ranges, @example.com/.net email. Not for real people.",
+  syntheticDisclaimer:
+    "Every row is synthetic (is_synthetic=true) for dev/QA only. Do not SMS, call, run KYC, or load into production without review.",
   countryTh: "Thailand (TH)",
   countryUs: "United States (US)",
   countryJp: "Japan (JP)",
@@ -150,12 +159,16 @@ const EN: UiCopy = {
   colCreditCardMasked: "pan_masked",
   colUuid: "uuid",
   colApiKey: "api_key_mock",
+  colIsSynthetic: "is_synthetic",
+  colGeneratedAt: "generated_at",
 };
 
 const JA: UiCopy = {
   title: "フェイクデータ生成",
   subtitle:
-    "国ごとのモック情報をローカルで生成 — 外部APIは使いません。カード/APIキーは検証用のダミーです。",
+    "合成データのみ — 架空の氏名・予約電話番号帯・@example.com/.net。実在の個人には使用しないでください。",
+  syntheticDisclaimer:
+    "すべての行は合成データ (is_synthetic=true) です。SMS・電話・KYC・本番投入は禁止。dev/QA 専用。",
   countryTh: "タイ (TH)",
   countryUs: "アメリカ合衆国 (US)",
   countryJp: "日本 (JP)",
@@ -195,6 +208,8 @@ const JA: UiCopy = {
   colCreditCardMasked: "pan_masked",
   colUuid: "uuid",
   colApiKey: "api_key_mock",
+  colIsSynthetic: "is_synthetic",
+  colGeneratedAt: "generated_at",
 };
 
 export function getUiCopy(country: CountryCode): UiCopy {
@@ -243,6 +258,8 @@ export function toBulkExportColumns(t: UiCopy): BulkExportColumn[] {
       { key: "creditCardMasked", label: t.colCreditCardMasked },
       { key: "uuid", label: t.colUuid },
       { key: "apiKeyMock", label: t.colApiKey },
+      { key: "isSynthetic", label: t.colIsSynthetic },
+      { key: "generatedAt", label: t.colGeneratedAt },
     ];
   } catch (error) {
     logError("toBulkExportColumns", error);
@@ -259,6 +276,8 @@ export function toBulkExportColumns(t: UiCopy): BulkExportColumn[] {
       { key: "creditCardMasked", label: "pan_masked" },
       { key: "uuid", label: "uuid" },
       { key: "apiKeyMock", label: "api_key_mock" },
+      { key: "isSynthetic", label: "is_synthetic" },
+      { key: "generatedAt", label: "generated_at" },
     ];
   }
 }

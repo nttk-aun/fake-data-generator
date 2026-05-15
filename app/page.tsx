@@ -4,6 +4,7 @@ import { BillingAlert } from "@/components/BillingAlert";
 import { FakeDataGenerator } from "@/components/FakeDataGenerator";
 import { FREE_BULK_MIN } from "@/lib/bulk-export";
 import { logError } from "@/lib/logger";
+import { isNextDynamicServerError } from "@/lib/next-dynamic";
 
 export default async function Home() {
   try {
@@ -26,6 +27,9 @@ export default async function Home() {
       </div>
     );
   } catch (error) {
+    if (isNextDynamicServerError(error)) {
+      throw error;
+    }
     logError("Home", error);
     return (
       <div className="p-10 text-center text-sm text-red-600">
