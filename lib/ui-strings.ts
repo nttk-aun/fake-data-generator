@@ -93,7 +93,7 @@ const TH: UiCopy = {
   bulkRowCountHint:
     "ยังไม่ล็อกอิน: ส่งออกได้สูงสุด {{guest}} แถว — ล็อกอินด้วย Google (มุมขวา) ได้สูงสุด {{member}} แถว",
   bulkUpgradeNote:
-    "ต้องการส่งออกสูงสุด 10,000 แถว? ล็อกอินแล้วกด「ซื้อ Pro (PromptPay)」มุมขวาบน — จ่ายครั้งเดียว ใช้ได้ตลอด",
+    "ถ้าต้องการ 1,000+ แถว ให้สมัครสมาชิก (มุมขวาบน) หรือติดต่อทีม",
   exportCsv: "ดาวน์โหลด CSV",
   exportPrintPdf: "เปิดพิมพ์ / PDF",
   bulkExporting: "กำลังเตรียมข้อมูล…",
@@ -142,7 +142,7 @@ const EN: UiCopy = {
   bulkRowCountHint:
     "Not signed in: up to {{guest}} rows — Sign in with Google (top right) for up to {{member}} rows",
   bulkUpgradeNote:
-    "Need up to 10,000 rows? Sign in and use “Buy Pro (PromptPay)” — one-time payment, lifetime access.",
+    "Need 1,000+ rows? Subscribe (top right) or contact the team.",
   exportCsv: "Download CSV",
   exportPrintPdf: "Print / Save as PDF",
   bulkExporting: "Preparing…",
@@ -191,7 +191,7 @@ const JA: UiCopy = {
   bulkRowCountHint:
     "未ログイン: 最大 {{guest}} 行 — 右上の Google でログインすると最大 {{member}} 行",
   bulkUpgradeNote:
-    "最大10,000行が必要ならログイン後、右上の「Pro購入 (PromptPay)」— 一度の支払いでずっと利用可能",
+    "1,000行以上が必要なら右上から会員登録するか、お問い合わせください",
   exportCsv: "CSVをダウンロード",
   exportPrintPdf: "印刷／PDFとして保存",
   bulkExporting: "準備中…",

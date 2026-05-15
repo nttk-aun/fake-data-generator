@@ -8,11 +8,10 @@ export default async function AppHeader() {
   try {
     const session = await auth();
     const billingStatus = session?.billing?.subscriptionStatus ?? "none";
-    const isPro =
+    const isSubscribed =
       session?.billing?.planSlug === "pro" ||
       billingStatus === "active" ||
-      billingStatus === "trialing" ||
-      billingStatus === "lifetime";
+      billingStatus === "trialing";
 
     return (
       <header className="border-b border-zinc-200 bg-white/90 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950/90">
@@ -32,7 +31,7 @@ export default async function AppHeader() {
                 >
                   {session.user.name ?? session.user.email}
                 </span>
-                {isPro ? (
+                {isSubscribed ? (
                   <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-200">
                     Pro
                   </span>
@@ -41,7 +40,7 @@ export default async function AppHeader() {
                     href="/api/billing/checkout"
                     className="rounded-md bg-amber-500 px-2 py-1 text-xs font-medium text-white hover:bg-amber-400"
                   >
-                    ซื้อ Pro (PromptPay)
+                    สมัคร $1/เดือน
                   </a>
                 )}
                 <form action={signOutAction}>
