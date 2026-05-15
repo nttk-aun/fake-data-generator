@@ -15,8 +15,12 @@ function billingMessage(code: string | null): string | null {
         "ยังไม่ได้ตั้ง STRIPE_SECRET_KEY ใน environment — ใส่คีย์ sk_test_... แล้ว restart เซิร์ฟเวอร์",
       "no-price":
         "ไม่พบ Stripe Price — (1) ใน .env.local ต้องมีบรรทัด STRIPE_PRICE_ID_MONTHLY=price_... ไม่ใช่คอมเมนต์ และต้องเป็น price_ ไม่ใช่ prod_ (2) หรือใน Neon: UPDATE plans SET stripe_price_id_monthly = 'price_...' WHERE slug = 'pro'; แล้ว restart npm run dev",
+      "no-database":
+        "ยังไม่ได้ตั้งค่าฐานข้อมูลบน Vercel — ไป Project → Settings → Environment Variables แล้วเพิ่ม DATABASE_URL (connection string จาก Neon) หรือเชื่อม Neon ผ่าน Storage tab แล้ว Redeploy — Stripe อย่างเดียวไม่พอ",
+      "db-error":
+        "เชื่อม Neon ไม่ได้หรือยังไม่ได้รัน SQL schema — เปิด Neon SQL Editor แล้วรันไฟล์ sql/001_membership_billing.sql ทั้งไฟล์ จากนั้น Redeploy",
       "no-user":
-        "ไม่พบบัญชีในระบบ — ลองออกจากระบบแล้วล็อกอินใหม่ หรือตรวจว่า DATABASE_URL ต่อ Neon ได้",
+        "ไม่พบบัญชีในระบบ — ลองออกจากระบบแล้วล็อกอินใหม่ หรือตรวจ Vercel Logs ว่า upsert ผู้ใช้สำเร็จ",
       "no-url": "Stripe ไม่คืนลิงก์ Checkout — ตรวจ Price / บัญชี Stripe ในโหมด test",
       error: "เกิดข้อผิดพลาดตอนสร้าง Checkout — ดู log ที่เทอร์มินัลหรือ Vercel Logs",
     };

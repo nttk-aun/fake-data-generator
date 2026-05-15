@@ -1,27 +1,29 @@
-import { buildRealisticEmailLocal, pickEmailDomain } from "@/lib/email-local";
+import { faker as fakerJa } from "@faker-js/faker/locale/ja";
 import { mockApiKey, mockUuid } from "@/lib/ids";
 import { formatPanGroups, generatePan16 } from "@/lib/luhn-card";
 import { logError } from "@/lib/logger";
 import type { GeneratedProfile } from "./types";
-import {
-  buildJapanSyntheticAddress,
-  formatJapanSyntheticPhone,
-  pickJapanCompany,
-  pickJapanFirstName,
-  pickJapanLastName,
-  syntheticGeneratedAt,
-} from "./synthetic";
+import { pickRealisticEmail, syntheticGeneratedAt } from "./profile-meta";
 
 export function generateJapanProfile(): GeneratedProfile {
   try {
-    const firstName = pickJapanFirstName();
-    const lastName = pickJapanLastName();
+    const firstName = fakerJa.person.firstName();
+    const lastName = fakerJa.person.lastName();
     const fullName = `${lastName} ${firstName}`;
-    const phone = formatJapanSyntheticPhone();
-    const address = buildJapanSyntheticAddress();
-    const domain = pickEmailDomain();
-    const email = `${buildRealisticEmailLocal(firstName, lastName)}@${domain}`;
-    const company = pickJapanCompany();
+
+    let phone = fakerJa.phone.number();
+    if ((phone.match(/\d/g)?.length ?? 0) < 10) {
+      phone = `090-${fakerJa.string.numeric(4)}-${fakerJa.string.numeric(4)}`;
+    }
+
+    const city = fakerJa.location.city();
+    const street = fakerJa.location.street();
+    const banchi = fakerJa.location.buildingNumber();
+    const prefecture = "東京都";
+    const postalCode = fakerJa.location.zipCode();
+    const address = `〒${postalCode}\n${prefecture}${city}${street}${banchi}`;
+    const email = pickRealisticEmail(firstName, lastName, fakerJa);
+    const company = fakerJa.company.name();
 
     const pan = generatePan16("356611111");
     const creditCard = formatPanGroups(pan);
@@ -47,13 +49,13 @@ export function generateJapanProfile(): GeneratedProfile {
     logError("generateJapanProfile", error);
     return {
       country: "JP",
-      firstName: "テスト",
-      lastName: "エイリアス",
-      fullName: "エイリアス テスト",
-      phone: "099-0000-0000",
-      address: "〒000-0000\n架空番地9397 サンプル町\nテスト区 東京都 000-0000",
-      email: "test.user@example.com",
-      company: "株式会社テストデータ",
+      firstName: "太郎",
+      lastName: "山田",
+      fullName: "山田 太郎",
+      phone: "090-1234-5678",
+      address: "〒150-0002\n東京都渋谷区1-2-3",
+      email: "taro.yamada@example.com",
+      company: "株式会社サンプル",
       creditCard: formatPanGroups("3566111111111113"),
       creditCardMasked: "356611••••••1113",
       uuid: mockUuid(),

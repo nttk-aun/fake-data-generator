@@ -1,3 +1,4 @@
+import type { Faker } from "@faker-js/faker";
 import { faker as fakerEn } from "@faker-js/faker/locale/en";
 import { logError } from "./logger";
 import { randomDigits } from "./random-utils";
@@ -13,11 +14,23 @@ export function buildRealisticEmailLocal(firstName: string, lastName: string): s
       .toLowerCase();
 
     if (ascii.length >= 3) {
-      const compact = ascii.replace(/\s+/g, ".");
-      return `${compact}.${randomDigits(2)}`;
+      const parts = ascii.split(/\s+/).filter(Boolean);
+      if (parts.length >= 2) {
+        const first = parts[0]!;
+        const last = parts[parts.length - 1]!;
+        const style = Math.floor(Math.random() * 3);
+        if (style === 0) {
+          return `${first[0]}${last}${randomDigits(1)}`;
+        }
+        if (style === 1) {
+          return `${first}.${last}${randomDigits(2)}`;
+        }
+        return `${first}${last.slice(0, 1)}${randomDigits(2)}`;
+      }
+      return `${parts[0]}.${randomDigits(2)}`;
     }
 
-    return `${fakerEn.internet.username()}.${randomDigits(3)}`;
+    return `${fakerEn.internet.username()}${randomDigits(2)}`;
   } catch (error) {
     logError("buildRealisticEmailLocal", error);
     try {
@@ -29,14 +42,29 @@ export function buildRealisticEmailLocal(firstName: string, lastName: string): s
   }
 }
 
-export function pickEmailDomain(): string {
+const COMMON_EMAIL_DOMAINS = [
+  "gmail.com",
+  "yahoo.com",
+  "outlook.com",
+  "hotmail.com",
+  "icloud.com",
+  "proton.me",
+] as const;
+
+/** Mix of well-known providers + faker domains (readable, Mockaroo-style). */
+export function pickRealisticEmailDomain(faker: Faker): string {
   try {
-    /** RFC 2606 / 6761 reserved — safe for synthetic data only. */
-    const domains = ["example.com", "example.net"] as const;
-    const idx = Math.floor(Math.random() * domains.length);
-    return domains[idx] ?? domains[0];
+    if (Math.random() < 0.75) {
+      const idx = Math.floor(Math.random() * COMMON_EMAIL_DOMAINS.length);
+      return COMMON_EMAIL_DOMAINS[idx] ?? "gmail.com";
+    }
+    return faker.internet.domainName();
   } catch (error) {
-    logError("pickEmailDomain", error);
+    logError("pickRealisticEmailDomain", error);
     return "example.com";
   }
+}
+
+export function pickEmailDomain(): string {
+  return pickRealisticEmailDomain(fakerEn);
 }

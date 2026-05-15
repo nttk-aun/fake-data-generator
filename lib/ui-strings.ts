@@ -68,9 +68,9 @@ export type UiCopy = {
 const TH: UiCopy = {
   title: "เครื่องสร้างข้อมูลจำลอง",
   subtitle:
-    "ข้อมูลจำลองเท่านั้น — ชื่อ/เบอร์/ที่อยู่ใช้ช่วงสมมุติ อีเมล @example.com/.net ห้ามใช้กับบุคคลจริง",
+    "สร้างข้อมูลจำลองที่ดูสมจริงตามประเทศ — รันในเครื่องคุณ ไม่เรียก API ภายนอก ใช้สำหรับ dev/QA เท่านั้น",
   syntheticDisclaimer:
-    "ข้อมูลทุกแถวเป็น SYNTHETIC (is_synthetic=true) สำหรับ dev/QA เท่านั้น ห้ามส่ง SMS โทร KYC หรือโหลดเข้าระบบ production โดยไม่ตรวจสอบ",
+    "ข้อมูลทุกแถวเป็น SYNTHETIC (is_synthetic=true) อาจบังเอิญคล้ายข้อมูลจริง — ห้ามส่ง SMS โทร KYC หรือโหลดเข้า production โดยไม่ตรวจสอบ",
   countryTh: "ไทย (TH)",
   countryUs: "สหรัฐอเมริกา (US)",
   countryJp: "ญี่ปุ่น (JP)",
@@ -117,9 +117,9 @@ const TH: UiCopy = {
 const EN: UiCopy = {
   title: "Fake Data Generator",
   subtitle:
-    "Synthetic identities only — fictional names, reserved phone ranges, @example.com/.net email. Not for real people.",
+    "Realistic-looking mock identities by country — runs locally, no external APIs. For dev/QA only.",
   syntheticDisclaimer:
-    "Every row is synthetic (is_synthetic=true) for dev/QA only. Do not SMS, call, run KYC, or load into production without review.",
+    "Every row is synthetic (is_synthetic=true) and may resemble real data by chance — do not SMS, call, run KYC, or load into production without review.",
   countryTh: "Thailand (TH)",
   countryUs: "United States (US)",
   countryJp: "Japan (JP)",
@@ -166,9 +166,9 @@ const EN: UiCopy = {
 const JA: UiCopy = {
   title: "フェイクデータ生成",
   subtitle:
-    "合成データのみ — 架空の氏名・予約電話番号帯・@example.com/.net。実在の個人には使用しないでください。",
+    "国別にリアルな見た目のモックデータ — ローカル実行・外部APIなし。dev/QA 専用。",
   syntheticDisclaimer:
-    "すべての行は合成データ (is_synthetic=true) です。SMS・電話・KYC・本番投入は禁止。dev/QA 専用。",
+    "すべての行は合成データ (is_synthetic=true) で、偶然実在データに似る場合があります。SMS・電話・KYC・本番投入は禁止。",
   countryTh: "タイ (TH)",
   countryUs: "アメリカ合衆国 (US)",
   countryJp: "日本 (JP)",

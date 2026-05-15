@@ -1,27 +1,24 @@
-import { buildRealisticEmailLocal, pickEmailDomain } from "@/lib/email-local";
+import { faker as fakerEn } from "@faker-js/faker/locale/en";
 import { mockApiKey, mockUuid } from "@/lib/ids";
 import { formatPanGroups, generatePan16 } from "@/lib/luhn-card";
 import { logError } from "@/lib/logger";
 import type { GeneratedProfile } from "./types";
-import {
-  buildUsSyntheticAddress,
-  formatUsSyntheticPhone,
-  pickUsCompany,
-  pickUsFirstName,
-  pickUsLastName,
-  syntheticGeneratedAt,
-} from "./synthetic";
+import { pickRealisticEmail, syntheticGeneratedAt } from "./profile-meta";
 
 export function generateUnitedStatesProfile(): GeneratedProfile {
   try {
-    const firstName = pickUsFirstName();
-    const lastName = pickUsLastName();
-    const fullName = `${firstName} ${lastName}`;
-    const phone = formatUsSyntheticPhone();
-    const address = buildUsSyntheticAddress();
-    const domain = pickEmailDomain();
-    const email = `${buildRealisticEmailLocal(firstName, lastName)}@${domain}`;
-    const company = pickUsCompany();
+    const firstName = fakerEn.person.firstName();
+    const lastName = fakerEn.person.lastName();
+    const fullName = fakerEn.person.fullName({ firstName, lastName });
+    const phone = fakerEn.phone.number({ style: "national" });
+    const secondary = fakerEn.location.secondaryAddress();
+    const addr = fakerEn.location.streetAddress();
+    const city = fakerEn.location.city();
+    const stateAbbr = fakerEn.location.state({ abbreviated: true });
+    const zip = fakerEn.location.zipCode();
+    const address = `${addr}\n${secondary ? `${secondary}\n` : ""}${city}, ${stateAbbr} ${zip}`;
+    const email = pickRealisticEmail(firstName, lastName, fakerEn);
+    const company = fakerEn.company.name();
 
     const pan = generatePan16("555555555");
     const creditCard = formatPanGroups(pan);
@@ -47,13 +44,13 @@ export function generateUnitedStatesProfile(): GeneratedProfile {
     logError("generateUnitedStatesProfile", error);
     return {
       country: "US",
-      firstName: "Test",
-      lastName: "Alias",
-      fullName: "Test Alias",
-      phone: "(555) 010-0000",
-      address: "Mock #9397 Sample Alley\nTest District, TS 00000",
-      email: "test.user@example.com",
-      company: "Test Testdata, Inc.",
+      firstName: "Alex",
+      lastName: "Sample",
+      fullName: "Alex Sample",
+      phone: "(555) 010-0199",
+      address: "123 Market St\nSan Francisco, CA 94105",
+      email: "alex.sample@example.com",
+      company: "Sample Co., Inc.",
       creditCard: formatPanGroups("5555555555554444"),
       creditCardMasked: "555555••••••4444",
       uuid: mockUuid(),

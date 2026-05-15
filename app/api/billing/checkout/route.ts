@@ -7,6 +7,7 @@ import {
 } from "@/lib/billing/users";
 import { getStripe } from "@/lib/billing/stripe-client";
 import { logError } from "@/lib/logger";
+import { hasDatabaseConfig } from "@/lib/neon";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -47,9 +48,16 @@ export async function GET() {
       return NextResponse.redirect(new URL("/?billing=no-price", baseUrl()));
     }
 
+    if (!hasDatabaseConfig()) {
+      return NextResponse.redirect(new URL("/?billing=no-database", baseUrl()));
+    }
+
     let userRow = await getUserBillingByEmail(email);
     if (!userRow) {
-      await ensureUserRowByEmail(email);
+      const ensured = await ensureUserRowByEmail(email);
+      if (!ensured) {
+        return NextResponse.redirect(new URL("/?billing=db-error", baseUrl()));
+      }
       userRow = await getUserBillingByEmail(email);
     }
     if (!userRow) {
