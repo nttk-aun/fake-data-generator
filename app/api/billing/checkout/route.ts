@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
+import { resolveOneTimePriceId } from "@/lib/billing/resolve-one-time-price";
 import {
   ensureUserRowByEmail,
-  getPlanStripePriceMonthly,
   getUserBillingByEmail,
   setStripeCustomerId,
 } from "@/lib/billing/users";
@@ -38,12 +38,7 @@ export async function GET() {
       return NextResponse.redirect(new URL("/?billing=stripe-missing", baseUrl()));
     }
 
-    const fromEnv = process.env.STRIPE_PRICE_ID_MONTHLY?.trim() ?? "";
-    const fromDb = (await getPlanStripePriceMonthly("pro"))?.trim() ?? "";
-    const rawPriceId = fromEnv || fromDb;
-    // Stripe Checkout ต้องการ Price ID (price_...) ไม่ใช่ Product ID (prod_...)
-    const priceId =
-      rawPriceId && !rawPriceId.startsWith("prod_") ? rawPriceId : "";
+    const priceId = await resolveOneTimePriceId("pro");
     if (!priceId) {
       return NextResponse.redirect(new URL("/?billing=no-price", baseUrl()));
     }
@@ -64,6 +59,10 @@ export async function GET() {
       return NextResponse.redirect(new URL("/?billing=no-user", baseUrl()));
     }
 
+    if (userRow.plan_slug === "pro") {
+      return NextResponse.redirect(new URL("/?billing=already-pro", baseUrl()));
+    }
+
     let customerId = userRow.stripe_customer_id;
     if (!customerId) {
       const customer = await stripe.customers.create({
@@ -76,15 +75,13 @@ export async function GET() {
 
     const origin = baseUrl();
     const checkout = await stripe.checkout.sessions.create({
-      mode: "subscription",
+      mode: "payment",
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
+      payment_method_types: ["promptpay", "card"],
       success_url: `${origin}/?billing=success`,
       cancel_url: `${origin}/?billing=cancel`,
-      metadata: { user_id: userRow.id },
-      subscription_data: {
-        metadata: { user_id: userRow.id },
-      },
+      metadata: { user_id: userRow.id, product_slug: "pro_lifetime" },
       allow_promotion_codes: false,
     });
 

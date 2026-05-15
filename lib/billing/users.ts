@@ -130,6 +130,80 @@ export async function getPlanStripePriceMonthly(
   }
 }
 
+export async function getPlanStripePriceOneTime(
+  planSlug: string,
+): Promise<string | null> {
+  const sql = getSql();
+  if (!sql) {
+    return null;
+  }
+  try {
+    const rows = (await sql`
+      SELECT stripe_price_id_one_time FROM plans WHERE slug = ${planSlug} LIMIT 1
+    `) as { stripe_price_id_one_time: string | null }[];
+    return rows[0]?.stripe_price_id_one_time ?? null;
+  } catch (error) {
+    logError("getPlanStripePriceOneTime", error);
+    return null;
+  }
+}
+
+/** One-time PromptPay / card checkout → Pro ตลอดชีพ (idempotent ต่อ checkout session). */
+export async function fulfillProLifetimePurchase(opts: {
+  userId: string;
+  checkoutSessionId: string;
+  paymentIntentId: string | null;
+  amountCents: number | null;
+  currency: string | null;
+}): Promise<boolean> {
+  const sql = getSql();
+  if (!sql) {
+    return false;
+  }
+  try {
+    const purchaseRows = (await sql`
+      INSERT INTO purchases (
+        user_id,
+        stripe_checkout_session_id,
+        stripe_payment_intent_id,
+        product_slug,
+        amount_cents,
+        currency,
+        fulfilled_at
+      )
+      VALUES (
+        ${opts.userId},
+        ${opts.checkoutSessionId},
+        ${opts.paymentIntentId},
+        'pro_lifetime',
+        ${opts.amountCents},
+        ${opts.currency ?? "thb"},
+        now()
+      )
+      ON CONFLICT (stripe_checkout_session_id) DO NOTHING
+      RETURNING id::text
+    `) as { id: string }[];
+    if (purchaseRows.length === 0) {
+      return false;
+    }
+
+    const maxRows = await getPlanMaxBulkRows("pro");
+    await sql`
+      UPDATE users SET
+        plan_slug = 'pro',
+        max_bulk_rows = ${maxRows},
+        subscription_status = 'lifetime',
+        subscription_current_period_end = NULL,
+        updated_at = now()
+      WHERE id = ${opts.userId}
+    `;
+    return true;
+  } catch (error) {
+    logError("fulfillProLifetimePurchase", error);
+    return false;
+  }
+}
+
 export async function getPlanMaxBulkRows(planSlug: string): Promise<number> {
   const sql = getSql();
   if (!sql) {
@@ -205,6 +279,12 @@ export async function downgradeUserToFree(userId: string): Promise<void> {
     return;
   }
   try {
+    const statusRows = (await sql`
+      SELECT subscription_status FROM users WHERE id = ${userId} LIMIT 1
+    `) as { subscription_status: string }[];
+    if (statusRows[0]?.subscription_status === "lifetime") {
+      return;
+    }
     const maxRows = await getPlanMaxBulkRows("free");
     await sql`
       UPDATE users SET

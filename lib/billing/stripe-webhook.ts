@@ -1,4 +1,5 @@
 import type Stripe from "stripe";
+import { handlePaidCheckoutSession } from "@/lib/billing/checkout-session";
 import {
   applyActiveSubscription,
   downgradeUserToFree,
@@ -63,6 +64,28 @@ async function syncSubscriptionFromStripe(
   }
 }
 
+async function handleCheckoutSessionCompleted(
+  session: Stripe.Checkout.Session,
+): Promise<void> {
+  if (session.mode === "payment") {
+    await handlePaidCheckoutSession(session);
+    return;
+  }
+  if (session.mode !== "subscription" || !session.subscription) {
+    return;
+  }
+  const stripe = getStripe();
+  if (!stripe) {
+    return;
+  }
+  const subId =
+    typeof session.subscription === "string"
+      ? session.subscription
+      : session.subscription.id;
+  const sub = await stripe.subscriptions.retrieve(subId);
+  await syncSubscriptionFromStripe(sub);
+}
+
 export async function handleStripeWebhookEvent(
   event: Stripe.Event,
 ): Promise<void> {
@@ -73,17 +96,10 @@ export async function handleStripeWebhookEvent(
     }
 
     switch (event.type) {
-      case "checkout.session.completed": {
+      case "checkout.session.completed":
+      case "checkout.session.async_payment_succeeded": {
         const session = event.data.object as Stripe.Checkout.Session;
-        if (session.mode !== "subscription" || !session.subscription) {
-          return;
-        }
-        const subId =
-          typeof session.subscription === "string"
-            ? session.subscription
-            : session.subscription.id;
-        const sub = await stripe.subscriptions.retrieve(subId);
-        await syncSubscriptionFromStripe(sub);
+        await handleCheckoutSessionCompleted(session);
         return;
       }
       case "customer.subscription.updated":

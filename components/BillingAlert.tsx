@@ -9,12 +9,14 @@ function billingMessage(code: string | null): string | null {
       return null;
     }
     const map: Record<string, string> = {
-      success: "ชำระเงินสำเร็จ — ถ้าแผนยังไม่เป็น Pro ให้รอสักครู่แล้วรีเฟรช (webhook อาจใช้เวลาไม่กี่วินาที)",
+      success:
+        "ชำระเงินสำเร็จ — ถ้าแผนยังไม่เป็น Pro ให้รอสักครู่แล้วรีเฟรช (webhook อาจใช้เวลาไม่กี่วินาที)",
       cancel: "ยกเลิกการชำระเงิน",
+      "already-pro": "บัญชีนี้เป็น Pro อยู่แล้ว",
       "stripe-missing":
         "ยังไม่ได้ตั้ง STRIPE_SECRET_KEY ใน environment — ใส่คีย์ sk_test_... แล้ว restart เซิร์ฟเวอร์",
       "no-price":
-        "ไม่พบ Stripe Price — (1) ใน .env.local ต้องมีบรรทัด STRIPE_PRICE_ID_MONTHLY=price_... ไม่ใช่คอมเมนต์ และต้องเป็น price_ ไม่ใช่ prod_ (2) หรือใน Neon: UPDATE plans SET stripe_price_id_monthly = 'price_...' WHERE slug = 'pro'; แล้ว restart npm run dev",
+        "ไม่พบ Stripe Price แบบจ่ายครั้งเดียว — ตั้ง STRIPE_PRICE_ID_ONE_TIME=price_... (one-time THB ใน Stripe) หรือใน Neon: UPDATE plans SET stripe_price_id_one_time = 'price_...' WHERE slug = 'pro'; แล้ว Redeploy",
       "no-database":
         "ยังไม่ได้ตั้งค่าฐานข้อมูลบน Vercel — ไป Project → Settings → Environment Variables แล้วเพิ่ม DATABASE_URL (connection string จาก Neon) หรือเชื่อม Neon ผ่าน Storage tab แล้ว Redeploy — Stripe อย่างเดียวไม่พอ",
       "db-error":
